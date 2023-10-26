@@ -54,6 +54,13 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <meta name="apple-mobile-web-app-title" content="offline-plugin" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-512x512.png"></link>
+      </head>
       <Web3Provider>
         <UserProvider>
           <WagmiConfig config={config}>
