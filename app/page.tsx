@@ -125,7 +125,10 @@ function DepositBlock() {
                     variant="outline"
                     onClick={handleClick}
                     disabled={!user}>
-                    <Copy className="mr-2 h-4 w-4" /> {formatContent(content)}
+                    <Copy className="mr-2 h-4 w-4" />
+                    {content == "Log in to see your address" || content == "Loading..."
+                        ? content
+                        : formatContent(content)}
                 </Button>
             </CardContent>
         </Card >
