@@ -65,7 +65,7 @@ export default function RootLayout({
         <UserProvider>
           <WagmiConfig config={config}>
             <body className={inter.className}>
-              <div className="relative flex min-h-screen flex-col pb-16">
+              <div className="relative flex min-h-screen flex-col">
                 <div className="flex-1">
                   <SiteHeader />
                   {children}

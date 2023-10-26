@@ -87,6 +87,13 @@ function DepositBlock() {
 
     const stethBalance = parseFloat(stethData?.formatted || "0")?.toFixed(3);
 
+    function formatContent(content: string) {
+        if (content.length <= 10) {
+            return content;
+        }
+        return `${content.substring(0, 5)}...${content.substring(content.length - 5)}`;
+    }
+
     return (
         <Card>
             <CardHeader className="text-center">
@@ -118,7 +125,7 @@ function DepositBlock() {
                     variant="outline"
                     onClick={handleClick}
                     disabled={!user}>
-                    <Copy className="mr-2 h-4 w-4" /> {content}
+                    <Copy className="mr-2 h-4 w-4" /> {formatContent(content)}
                 </Button>
             </CardContent>
         </Card >
