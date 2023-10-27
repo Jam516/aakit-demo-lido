@@ -49,7 +49,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const initializeAlchemyProvider = async () => {
-        // console.log("initializing alchemy provider");
         const chain = sepolia;
 
         const alchemyKey: string = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY ?? "demo";
@@ -73,8 +72,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                     rpcClient,
                 }),
         );
-
-        console.log("Address Log in UserContext: ", await provider.getAddress());
 
         setAlchemyProvider(provider);
         setIsInitialized(true);

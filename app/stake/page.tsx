@@ -5,18 +5,23 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useBalance } from "wagmi";
 import { Separator } from "@/components/ui/separator"
 import { useState, useEffect } from 'react';
-import { parseUnits } from 'viem'
-import { useWeb3 } from "@/lib/Web3Context";
+import { Hash, parseUnits } from 'viem'
 import { useUser } from "@/lib/UserContext";
-import { AlchemyProvider } from "@alchemy/aa-alchemy";
 import { useToast } from "@/components/ui/use-toast"
+import { BalanceDisplay } from "@/components/balancedisplay";
+
+type UOStatus =
+  | "Submit"
+  | "Requesting"
+  | "Bundling"
+  | "Received"
+  | "Error Bundling";
 
 function TitleBlock() {
   return (
@@ -31,19 +36,36 @@ function TitleBlock() {
 }
 
 function StakeBlock() {
-  // Use the UserContext to get the alchemyProvider and isInitialized state
-  const { user, alchemyProvider, isInitialized } = useUser();
+  // Define your state variables and their setters
   const [address, setAddress] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
-  const { toast } = useToast()
+  const [uotxHash, setUOTxhash] = useState<Hash>();
+  const [uoStatus, setUOStatus] = useState<UOStatus>("Submit");
 
+  // Access UserContext values and external hooks
+  const { user, alchemyProvider, isInitialized } = useUser();
+  const { toast } = useToast()
+  const { data: ethData } = useBalance({
+    address: address ?? undefined,
+    watch: true,
+  });
+  const { data: stethData } = useBalance({
+    address: address ?? undefined,
+    token: '0xbf52359044670050842df67da8183d7d278477f5',
+    watch: true,
+  });
+
+  // Format data
+  const ethBalance = parseFloat(ethData?.formatted || "0")?.toFixed(3);
+  const stethBalance = parseFloat(stethData?.formatted || "0")?.toFixed(3);
+
+  // Define utility functions
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // Update the input value state when the input changes
     setInputValue(event.target.value);
   };
-
   const isNotNumber = isNaN(Number(inputValue));
 
+  // Fetch and set the user's address
   useEffect(() => {
     const fetchAddress = async () => {
       if (user && alchemyProvider && isInitialized) {
@@ -54,61 +76,41 @@ function StakeBlock() {
     fetchAddress();
   }, [user, alchemyProvider, isInitialized]);
 
-  let content: string;
-  if (!user) {
-    content = "Log in to see your address";
-  } else if (!isInitialized) {
-    content = "Loading...";
-  } else {
-    content = address ?? 'address';
-  }
-
-  const {
-    data: ethData,
-    isError: ethIsError,
-    isLoading: ethIsLoading,
-  } = useBalance({
-    address: address ?? undefined,
-    watch: true,
-  });
-
-  const ethBalance = parseFloat(ethData?.formatted || "0")?.toFixed(3);
-
-  const {
-    data: stethData,
-    isError: stethIsError,
-    isLoading: stethIsLoading,
-  } = useBalance({
-    address: address ?? undefined,
-    token: '0xbf52359044670050842df67da8183d7d278477f5',
-    watch: true,
-  });
-
-  const stethBalance = parseFloat(stethData?.formatted || "0")?.toFixed(3);
-
+  // Define the main function to handle the stake action
   async function handleClick() {
+    setUOStatus("Requesting");
+    const { hash: uohash, request } = await alchemyProvider.sendUserOperation({
+      target: '0xbf52359044670050842df67da8183d7d278477f5',
+      data: "0x",
+      value: parseUnits(inputValue, 18),
+    });
+
+    setUOStatus("Bundling");
+    let txHash: Hash;
     try {
-      const { hash } = await alchemyProvider.sendUserOperation({
-        target: '0xbf52359044670050842df67da8183d7d278477f5',
-        data: "0x",
-        value: parseUnits(inputValue, 18),
-      });
-
-      toast({
-        title: "UserOp Submitted!",
-        description: `Hash: ${hash}`
-      });
-      console.log("UserOp Hash:", hash);
-
-    } catch (error) {
-
+      txHash = await alchemyProvider.waitForUserOperationTransaction(uohash);
+    } catch (e) {
+      setUOStatus("Error Bundling");
+      setTimeout(() => {
+        setUOStatus("Submit");
+      }, 5000);
       toast({
         variant: "destructive",
-        title: "Error sending user operation:",
+        title: "Error sending user operation",
       });
-
-      console.error("Error sending user operation:", error);
+      return;
     }
+
+    setUOTxhash(txHash);
+    setUOStatus("Received");
+    toast({
+      title: "Transaction Successful!"
+    });
+    console.log("Txn Hash:", txHash);
+    setTimeout(() => {
+      setUOStatus("Submit");
+    }, 5000);
+
   }
 
   return (
@@ -117,18 +119,7 @@ function StakeBlock() {
         {!user
           ? <div></div>
           :
-          <>
-            <CardDescription>Available to stake</CardDescription>
-            <h1 className="font-extrabold leading-tight tracking-tighter text-xl">
-              {ethBalance} ETH
-            </h1>
-            <Separator />
-            <CardDescription>Staked amount</CardDescription>
-            <h1 className="font-extrabold leading-tight tracking-tighter text-xl">
-              {stethBalance} stETH
-            </h1>
-            <Separator />
-          </>
+          <BalanceDisplay ethBalance={ethBalance} stethBalance={stethBalance} />
         }
         <div>
           Enter the amount of ETH
@@ -147,15 +138,29 @@ function StakeBlock() {
               inputValue === "" ||
               isNotNumber ||
               !user ||
+              uoStatus !== "Submit" ||
               Number(inputValue) > Number(ethBalance)
             }>
-            Submit
+            {uoStatus}
+            {(uoStatus === "Requesting" || uoStatus === "Bundling") && (
+              <span className="loading loading-spinner loading-md"></span>
+            )}
           </Button>
         </div>
       </CardContent>
       <CardFooter>
         {Number(inputValue) > Number(ethBalance) && (
           <div className="text-foreground/70">You dont have enough ETH...</div>
+        )}
+        {uotxHash && (
+          <div className="text-center">
+            <a
+              href={`https://sepolia.etherscan.io/tx/${uotxHash}`}
+              className="btn text-blue-700 underline"
+            >
+              Your Txn Details
+            </a>
+          </div>
         )}
       </CardFooter>
     </Card >

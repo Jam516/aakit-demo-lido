@@ -18,6 +18,7 @@ import { useUser } from "@/lib/UserContext";
 import { AlchemyProvider } from "@alchemy/aa-alchemy";
 import { Copy } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
+import { BalanceDisplay } from "@/components/balancedisplay";
 
 function TitleBlock() {
     return (
@@ -32,12 +33,13 @@ function TitleBlock() {
 }
 
 function DepositBlock() {
-    // Use the UserContext to get the alchemyProvider and isInitialized state
-    const { user, alchemyProvider, isInitialized } = useUser();
+    // Define state variables
     const [address, setAddress] = useState<string | null>(null);
-
+    // Access UserContext values and external hooks
+    const { user, alchemyProvider, isInitialized } = useUser();
     const { toast } = useToast()
 
+    // Effect hook to fetch and set the user's address
     useEffect(() => {
         const fetchAddress = async () => {
             if (user && alchemyProvider && isInitialized) {
@@ -48,6 +50,38 @@ function DepositBlock() {
         fetchAddress();
     }, [user, alchemyProvider, isInitialized]);
 
+    // Function to copy address to clipboard
+    function handleClick() {
+        navigator.clipboard.writeText(content);
+        toast({
+            title: "Copied Address!",
+        });
+    }
+
+    // Hook to fetch ETH balance
+    const { data: ethData } = useBalance({
+        address: address ?? undefined,
+        watch: true,
+    });
+    const ethBalance = parseFloat(ethData?.formatted || "0")?.toFixed(3);
+
+    // Hook to fetch stETH balance
+    const { data: stethData } = useBalance({
+        address: address ?? undefined,
+        token: '0xbf52359044670050842df67da8183d7d278477f5',
+        watch: true,
+    });
+    const stethBalance = parseFloat(stethData?.formatted || "0")?.toFixed(3);
+
+    // Function to format Ethereum address for display
+    function formatContent(content: string) {
+        if (content.length <= 10) {
+            return content;
+        }
+        return `${content.substring(0, 5)}...${content.substring(content.length - 5)}`;
+    }
+
+    // Determine content of the button based on user's login state and initialization status
     let content: string;
     if (!user) {
         content = "Log in to see your address";
@@ -57,61 +91,13 @@ function DepositBlock() {
         content = address ?? 'address';
     }
 
-    function handleClick() {
-        navigator.clipboard.writeText(content);
-        toast({
-            title: "Copied Address!",
-        });
-    }
-
-    const {
-        data: ethData,
-        isError: ethIsError,
-        isLoading: ethIsLoading,
-    } = useBalance({
-        address: address ?? undefined,
-        watch: true,
-    });
-
-    const ethBalance = parseFloat(ethData?.formatted || "0")?.toFixed(3);
-
-    const {
-        data: stethData,
-        isError: stethIsError,
-        isLoading: stethIsLoading,
-    } = useBalance({
-        address: address ?? undefined,
-        token: '0xbf52359044670050842df67da8183d7d278477f5',
-        watch: true,
-    });
-
-    const stethBalance = parseFloat(stethData?.formatted || "0")?.toFixed(3);
-
-    function formatContent(content: string) {
-        if (content.length <= 10) {
-            return content;
-        }
-        return `${content.substring(0, 5)}...${content.substring(content.length - 5)}`;
-    }
-
     return (
         <Card>
             <CardHeader className="text-center">
                 {!user
                     ? <div></div>
                     :
-                    <>
-                        <CardDescription>Available to stake</CardDescription>
-                        <h1 className="font-extrabold leading-tight tracking-tighter text-xl">
-                            {ethBalance} ETH
-                        </h1>
-                        <Separator />
-                        <CardDescription>Staked amount</CardDescription>
-                        <h1 className="font-extrabold leading-tight tracking-tighter text-xl">
-                            {stethBalance} stETH
-                        </h1>
-                        <Separator />
-                    </>
+                    <BalanceDisplay ethBalance={ethBalance} stethBalance={stethBalance} />
                 }
                 <div className="py-2">
                     Copy the Ethereum address to send
@@ -126,9 +112,7 @@ function DepositBlock() {
                     onClick={handleClick}
                     disabled={!user}>
                     <Copy className="mr-2 h-4 w-4" />
-                    {content == "Log in to see your address" || content == "Loading..."
-                        ? content
-                        : formatContent(content)}
+                    {content.startsWith("0x") ? formatContent(content) : content}
                 </Button>
             </CardContent>
         </Card >
