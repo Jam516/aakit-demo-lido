@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react"
 import Web3 from "web3"
-import { magic, magicSigner } from "@/app/magic"
+import { magic } from "@/app/magic"
 
 // Define the structure of the Web3 context state
 type Web3ContextType = {

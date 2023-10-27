@@ -2,20 +2,12 @@
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardFooter,
     CardHeader,
-    CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useAccount, useBalance } from "wagmi";
-import { Separator } from "@/components/ui/separator"
+import { useBalance } from "wagmi";
 import { useState, useEffect } from 'react';
-import { parseUnits } from 'viem'
-import { useWeb3 } from "@/lib/Web3Context";
 import { useUser } from "@/lib/UserContext";
-import { AlchemyProvider } from "@alchemy/aa-alchemy";
 import { Copy } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
 import { BalanceDisplay } from "@/components/balancedisplay";

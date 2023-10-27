@@ -2,14 +2,12 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useBalance } from "wagmi";
-import { Separator } from "@/components/ui/separator"
 import { useState, useEffect } from 'react';
 import { Hash, parseUnits } from 'viem'
 import { useUser } from "@/lib/UserContext";
@@ -46,11 +44,11 @@ function StakeBlock() {
   const { user, alchemyProvider, isInitialized } = useUser();
   const { toast } = useToast()
   const { data: ethData } = useBalance({
-    address: address ?? undefined,
+    address: address as `0x${string}` | undefined,
     watch: true,
   });
   const { data: stethData } = useBalance({
-    address: address ?? undefined,
+    address: address as `0x${string}` | undefined,
     token: '0xbf52359044670050842df67da8183d7d278477f5',
     watch: true,
   });
@@ -78,12 +76,30 @@ function StakeBlock() {
 
   // Define the main function to handle the stake action
   async function handleClick() {
+    if (!alchemyProvider) {
+      console.error("AlchemyProvider is not initialized");
+      return;
+    }
+
+    let uohash;
     setUOStatus("Requesting");
-    const { hash: uohash, request } = await alchemyProvider.sendUserOperation({
-      target: '0xbf52359044670050842df67da8183d7d278477f5',
-      data: "0x",
-      value: parseUnits(inputValue, 18),
-    });
+    try {
+      ({ hash: uohash } = await alchemyProvider.sendUserOperation({
+        target: '0xbf52359044670050842df67da8183d7d278477f5',
+        data: "0x",
+        value: parseUnits(inputValue, 18),
+      }));
+    } catch (error) {
+      // Handle any errors that occur during the user operation request
+      console.error('Error sending user operation:', error);
+      setUOStatus("Error Bundling");
+      toast({
+        variant: "destructive",
+        title: "Error sending user operation",
+      });
+      setTimeout(() => setUOStatus("Submit"), 5000);
+      return;
+    }
 
     setUOStatus("Bundling");
     let txHash: Hash;
@@ -96,7 +112,7 @@ function StakeBlock() {
       }, 5000);
       toast({
         variant: "destructive",
-        title: "Error sending user operation",
+        title: "Error bundling user operation",
       });
       return;
     }
@@ -139,7 +155,7 @@ function StakeBlock() {
               isNotNumber ||
               !user ||
               uoStatus !== "Submit" ||
-              Number(inputValue) > Number(ethBalance)
+              Number(inputValue) >= Number(ethBalance)
             }>
             {uoStatus}
             {(uoStatus === "Requesting" || uoStatus === "Bundling") && (

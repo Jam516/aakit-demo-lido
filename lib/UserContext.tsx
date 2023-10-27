@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react"
 import { useWeb3 } from "./Web3Context"
-import { magic, magicSigner } from "@/app/magic"
+import { magicSigner } from "@/app/magic"
 import { AlchemyProvider } from "@alchemy/aa-alchemy";
 import { sepolia } from "viem/chains";
 import {

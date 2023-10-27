@@ -1,12 +1,8 @@
 "use client"
 
-import { useBalance } from "wagmi";
-import { Separator } from "@/components/ui/separator"
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Hash, parseUnits } from 'viem'
-import { useWeb3 } from "@/lib/Web3Context";
 import { useUser } from "@/lib/UserContext";
-import { AlchemyProvider } from "@alchemy/aa-alchemy";
 import { stethConfig } from '@/lib/stethabi'
 import { encodeFunctionData } from 'viem'
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -82,6 +78,11 @@ function WithdrawBlock() {
 
     // Define the main function to handle the token send action
     async function onSubmit(values: z.infer<typeof TransferSchema>) {
+        if (!alchemyProvider) {
+            console.error("AlchemyProvider is not initialized");
+            return;
+        }
+
         // Destructure values for easier access and readability
         const { token, address, amount } = values;
 
@@ -152,7 +153,7 @@ function WithdrawBlock() {
             }, 5000);
             toast({
                 variant: "destructive",
-                title: "Error sending user operation",
+                title: "Error bundling user operation",
             });
 
         } finally {
