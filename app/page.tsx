@@ -3,6 +3,7 @@ import {
     Card,
     CardContent,
     CardHeader,
+    CardDescription,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useBalance } from "wagmi";
@@ -10,7 +11,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from "@/lib/UserContext";
 import { Copy } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
-import { BalanceDisplay } from "@/components/balancedisplay";
+import { Separator } from "@/components/ui/separator"
 
 function TitleBlock() {
     return (
@@ -31,7 +32,7 @@ function DepositBlock() {
     const { user, alchemyProvider, isInitialized } = useUser();
     const { toast } = useToast()
 
-    // Effect hook to fetch and set the user's address
+    // Effect hook to fetch and set the user's smart account address
     useEffect(() => {
         const fetchAddress = async () => {
             if (user && alchemyProvider && isInitialized) {
@@ -52,14 +53,14 @@ function DepositBlock() {
 
     // Hook to fetch ETH balance
     const { data: ethData } = useBalance({
-        address: address ?? undefined,
+        address: address as `0x${string}` | undefined,
         watch: true,
     });
     const ethBalance = parseFloat(ethData?.formatted || "0")?.toFixed(3);
 
     // Hook to fetch stETH balance
     const { data: stethData } = useBalance({
-        address: address ?? undefined,
+        address: address as `0x${string}` | undefined,
         token: '0xbf52359044670050842df67da8183d7d278477f5',
         watch: true,
     });
@@ -89,7 +90,18 @@ function DepositBlock() {
                 {!user
                     ? <div></div>
                     :
-                    <BalanceDisplay ethBalance={ethBalance} stethBalance={stethBalance} />
+                    <>
+                        <CardDescription>Available to stake</CardDescription>
+                        <h1 className="font-extrabold leading-tight tracking-tighter text-xl">
+                            {ethBalance} ETH
+                        </h1>
+                        <Separator />
+                        <CardDescription>Staked amount</CardDescription>
+                        <h1 className="font-extrabold leading-tight tracking-tighter text-xl">
+                            {stethBalance} stETH
+                        </h1>
+                        <Separator />
+                    </>
                 }
                 <div className="py-2">
                     Copy the Ethereum address to send
@@ -112,7 +124,7 @@ function DepositBlock() {
 }
 
 
-export default function Home() {
+export default function DepositPage() {
     return (
         <div className="flex flex-col items-center gap-6 py-3 ">
             <TitleBlock />

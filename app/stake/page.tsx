@@ -4,6 +4,7 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
+  CardDescription,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -12,7 +13,7 @@ import { useState, useEffect } from 'react';
 import { Hash, parseUnits } from 'viem'
 import { useUser } from "@/lib/UserContext";
 import { useToast } from "@/components/ui/use-toast"
-import { BalanceDisplay } from "@/components/balancedisplay";
+import { Separator } from "@/components/ui/separator"
 
 type UOStatus =
   | "Submit"
@@ -135,7 +136,18 @@ function StakeBlock() {
         {!user
           ? <div></div>
           :
-          <BalanceDisplay ethBalance={ethBalance} stethBalance={stethBalance} />
+          <>
+            <CardDescription>Available to stake</CardDescription>
+            <h1 className="font-extrabold leading-tight tracking-tighter text-xl">
+              {ethBalance} ETH
+            </h1>
+            <Separator />
+            <CardDescription>Staked amount</CardDescription>
+            <h1 className="font-extrabold leading-tight tracking-tighter text-xl">
+              {stethBalance} stETH
+            </h1>
+            <Separator />
+          </>
         }
         <div>
           Enter the amount of ETH
@@ -184,7 +196,7 @@ function StakeBlock() {
 }
 
 
-export default function Home() {
+export default function StakePage() {
   return (
     <div className="flex flex-col items-center gap-6 py-3 ">
       <TitleBlock />

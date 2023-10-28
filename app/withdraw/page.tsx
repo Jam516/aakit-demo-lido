@@ -235,7 +235,7 @@ function WithdrawBlock() {
 }
 
 
-export default function Home() {
+export default function WithdrawPage() {
     return (
         <div className="flex flex-col items-center gap-6 py-3 ">
             <TitleBlock />
