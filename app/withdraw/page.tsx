@@ -33,6 +33,7 @@ type UOStatus =
     | "Send"
     | "Requesting"
     | "Bundling"
+    | "Retrying"
     | "Received"
     | "Error Bundling";
 
@@ -99,10 +100,11 @@ function WithdrawBlock() {
         setUOStatus("Requesting");
 
         let uohash;
+        let uorequest;
         // Determine the token type and send the user operation accordingly
         try {
             if (token == 'ETH') {
-                ({ hash: uohash } = await alchemyProvider.sendUserOperation({
+                ({ hash: uohash, request: uorequest } = await alchemyProvider.sendUserOperation({
                     target: values.address,
                     data: "0x",
                     value: parseUnits(values.amount.toString(), 18),
@@ -111,7 +113,7 @@ function WithdrawBlock() {
             }
             else if (values.token == 'stETH') {
                 setUOStatus("Requesting");
-                ({ hash: uohash } = await alchemyProvider.sendUserOperation({
+                ({ hash: uohash, request: uorequest } = await alchemyProvider.sendUserOperation({
                     target: "0xbf52359044670050842df67da8183d7d278477f5",
                     data: encodeFunctionData({
                         abi: stethConfig.abi,
@@ -135,33 +137,39 @@ function WithdrawBlock() {
         // Wait for the user operation transaction to be bundled
         setUOStatus("Bundling");
         let txHash: Hash;
+        let replacedhash;
         try {
             txHash = await alchemyProvider.waitForUserOperationTransaction(uohash);
-            // Handle the successful transaction
-            setUOTxhash(txHash);
-            setUOStatus("Received");
-            toast({
-                title: "Transaction Successful!"
-            });
-            console.log("Txn Hash:", txHash);
         } catch (error) {
-            // Handle any errors that occur while waiting for the transaction
             console.error('Error bundling user operation:', error);
-            setUOStatus("Error Bundling");
-            setTimeout(() => {
-                setUOStatus("Send");
-            }, 5000);
-            toast({
-                variant: "destructive",
-                title: "Error bundling user operation",
-            });
-
-        } finally {
-            // Reset the user operation status after a delay
-            setTimeout(() => setUOStatus("Send"), 5000);
+            setUOStatus("Retrying");
+            try {
+                ({ hash: replacedhash } = await alchemyProvider.dropAndReplaceUserOperation(uorequest));
+                txHash = await alchemyProvider.waitForUserOperationTransaction(replacedhash);
+            } catch (retryError) {
+                console.error('Error during retry:', retryError);
+                setUOStatus("Error Bundling");
+                toast({
+                    variant: "destructive",
+                    title: "Error bundling user operation",
+                });
+                setTimeout(() => setUOStatus("Send"), 5000);
+                return;
+            }
         }
 
+        setUOTxhash(txHash);
+        setUOStatus("Received");
+        toast({
+            title: "Transaction Successful!"
+        });
+        console.log("Txn Hash:", txHash);
+        setTimeout(() => {
+            setUOStatus("Send");
+        }, 5000);
+
     }
+
 
     return (
         <>

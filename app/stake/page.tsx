@@ -19,6 +19,7 @@ type UOStatus =
   | "Submit"
   | "Requesting"
   | "Bundling"
+  | "Retrying"
   | "Received"
   | "Error Bundling";
 
@@ -83,9 +84,10 @@ function StakeBlock() {
     }
 
     let uohash;
+    let uorequest;
     setUOStatus("Requesting");
     try {
-      ({ hash: uohash } = await alchemyProvider.sendUserOperation({
+      ({ hash: uohash, request: uorequest } = await alchemyProvider.sendUserOperation({
         target: '0xbf52359044670050842df67da8183d7d278477f5',
         data: "0x",
         value: parseUnits(inputValue, 18),
@@ -103,19 +105,26 @@ function StakeBlock() {
     }
 
     setUOStatus("Bundling");
-    let txHash: Hash;
+    let txHash;
+    let replacedhash;
     try {
       txHash = await alchemyProvider.waitForUserOperationTransaction(uohash);
-    } catch (e) {
-      setUOStatus("Error Bundling");
-      setTimeout(() => {
-        setUOStatus("Submit");
-      }, 5000);
-      toast({
-        variant: "destructive",
-        title: "Error bundling user operation",
-      });
-      return;
+    } catch (error) {
+      console.error('Error bundling user operation:', error);
+      setUOStatus("Retrying");
+      try {
+        ({ hash: replacedhash } = await alchemyProvider.dropAndReplaceUserOperation(uorequest));
+        txHash = await alchemyProvider.waitForUserOperationTransaction(replacedhash);
+      } catch (retryError) {
+        console.error('Error during retry:', retryError);
+        setUOStatus("Error Bundling");
+        toast({
+          variant: "destructive",
+          title: "Error bundling user operation",
+        });
+        setTimeout(() => setUOStatus("Submit"), 5000);
+        return;
+      }
     }
 
     setUOTxhash(txHash);
