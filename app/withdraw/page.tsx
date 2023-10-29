@@ -31,9 +31,9 @@ import {
 
 type UOStatus =
     | "Send"
-    | "Requesting"
-    | "Bundling"
-    | "Retrying"
+    | "Requesting..."
+    | "Bundling..."
+    | "Retrying..."
     | "Received"
     | "Error Bundling";
 
@@ -97,7 +97,7 @@ function WithdrawBlock() {
         const parsedAmount = parseUnits(amount.toString(), 18);
 
         // Start the user operation request process
-        setUOStatus("Requesting");
+        setUOStatus("Requesting...");
 
         let uohash;
         let uorequest;
@@ -112,7 +112,7 @@ function WithdrawBlock() {
 
             }
             else if (values.token == 'stETH') {
-                setUOStatus("Requesting");
+                setUOStatus("Requesting...");
                 ({ hash: uohash, request: uorequest } = await alchemyProvider.sendUserOperation({
                     target: "0xbf52359044670050842df67da8183d7d278477f5",
                     data: encodeFunctionData({
@@ -135,14 +135,14 @@ function WithdrawBlock() {
         }
 
         // Wait for the user operation transaction to be bundled
-        setUOStatus("Bundling");
+        setUOStatus("Bundling...");
         let txHash: Hash;
         let replacedhash;
         try {
             txHash = await alchemyProvider.waitForUserOperationTransaction(uohash);
         } catch (error) {
             console.error('Error bundling user operation:', error);
-            setUOStatus("Retrying");
+            setUOStatus("Retrying...");
             try {
                 ({ hash: replacedhash } = await alchemyProvider.dropAndReplaceUserOperation(uorequest));
                 txHash = await alchemyProvider.waitForUserOperationTransaction(replacedhash);

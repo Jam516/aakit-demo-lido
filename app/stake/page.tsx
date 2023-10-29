@@ -17,9 +17,9 @@ import { Separator } from "@/components/ui/separator"
 
 type UOStatus =
   | "Submit"
-  | "Requesting"
-  | "Bundling"
-  | "Retrying"
+  | "Requesting..."
+  | "Bundling..."
+  | "Retrying..."
   | "Received"
   | "Error Bundling";
 
@@ -85,7 +85,7 @@ function StakeBlock() {
 
     let uohash;
     let uorequest;
-    setUOStatus("Requesting");
+    setUOStatus("Requesting...");
     try {
       ({ hash: uohash, request: uorequest } = await alchemyProvider.sendUserOperation({
         target: '0xbf52359044670050842df67da8183d7d278477f5',
@@ -104,14 +104,14 @@ function StakeBlock() {
       return;
     }
 
-    setUOStatus("Bundling");
+    setUOStatus("Bundling...");
     let txHash;
     let replacedhash;
     try {
       txHash = await alchemyProvider.waitForUserOperationTransaction(uohash);
     } catch (error) {
       console.error('Error bundling user operation:', error);
-      setUOStatus("Retrying");
+      setUOStatus("Retrying...");
       try {
         ({ hash: replacedhash } = await alchemyProvider.dropAndReplaceUserOperation(uorequest));
         txHash = await alchemyProvider.waitForUserOperationTransaction(replacedhash);
@@ -179,7 +179,7 @@ function StakeBlock() {
               Number(inputValue) >= Number(ethBalance)
             }>
             {uoStatus}
-            {(uoStatus === "Requesting" || uoStatus === "Bundling") && (
+            {(uoStatus === "Requesting..." || uoStatus === "Bundling...") && (
               <span className="loading loading-spinner loading-md"></span>
             )}
           </Button>
