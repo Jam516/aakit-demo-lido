@@ -105,7 +105,7 @@ function WithdrawBlock() {
         try {
             if (token == 'ETH') {
                 ({ hash: uohash, request: uorequest } = await alchemyProvider.sendUserOperation({
-                    target: values.address,
+                    target: values.address as `0x${string}`,
                     data: "0x",
                     value: parseUnits(values.amount.toString(), 18),
                 }));
@@ -118,7 +118,7 @@ function WithdrawBlock() {
                     data: encodeFunctionData({
                         abi: stethConfig.abi,
                         functionName: 'transfer',
-                        args: [values.address, parseUnits(values.amount.toString(), 18)]
+                        args: [values.address as `0x${string}`, parseUnits(values.amount.toString(), 18)]
                     }),
                 }));
             }
