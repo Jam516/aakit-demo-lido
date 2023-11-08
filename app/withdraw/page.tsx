@@ -45,7 +45,7 @@ function TitleBlock() {
             <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
                 Withdraw
             </h1><p className="max-w-[700px] text-lg text-center text-muted-foreground">
-                Withdraw ETH and receive stETH from your wallet
+                Withdraw ETH and stETH
             </p>
         </div>
     );
